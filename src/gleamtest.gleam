@@ -2,11 +2,11 @@ import gleam/int
 import gleam/list
 import lustre
 import lustre/attribute.{
-  autofocus, checked, class, classes, for, href, id, name, placeholder, style,
-  type_, value,
-}
-import lustre/effect.{none}
-import lustre/element.{type Element, text}
+  type Attribute, attribute, autofocus, checked, class, classes, for, href, id,
+  name, on, placeholder, style, type_, value,
+} as attr
+import lustre/effect.{type Effect, none}
+import lustre/element.{type Element, keyed, text}
 import lustre/element/html.{
   a, button, div, footer, h1, header, input, label, li, p, section, span, strong,
   ul,
@@ -85,7 +85,10 @@ fn update(model, msg) {
             }
           }),
         ),
-        none(),
+        case editing {
+          True -> focus_element("todo-" <> int.to_string(id))
+          False -> none()
+        },
       )
     }
     UpdateEntry(id, desc) -> {
@@ -210,11 +213,20 @@ fn view_entries(visibility: String, entries: List(Entry)) {
       on_click(CheckAll(!all_completed)),
     ]),
     label([for("toggle-all")], [text("Mark all as complete")]),
-    ul(
-      [class("todo-list")],
-      list.map(list.filter(entries, is_visible), view_entry),
-    ),
+    view_entry_list([class("todo-list")], list.filter(entries, is_visible)),
   ])
+}
+
+fn view_entry_list(
+  attrs: List(Attribute(Msg)),
+  entries: List(Entry),
+) -> Element(Msg) {
+  keyed(
+    fn(children) { ul(attrs, children) },
+    list.map(entries, fn(entry: Entry) {
+      #(int.to_string(entry.id), view_entry(entry))
+    }),
+  )
 }
 
 fn view_entry(entry: Entry) -> Element(Msg) {
@@ -226,7 +238,9 @@ fn view_entry(entry: Entry) -> Element(Msg) {
         checked(entry.completed),
         on_click(Check(entry.id, !entry.completed)),
       ]),
-      label([on_click(EditingEntry(entry.id, True))], [text(entry.description)]),
+      label([on_db_click(EditingEntry(entry.id, True))], [
+        text(entry.description),
+      ]),
       button([class("destroy"), on_click(Delete(entry.id))], []),
     ]),
     input([
@@ -310,7 +324,24 @@ fn info_footer() {
 
 fn hidden(b: Bool) {
   case b {
-    True -> style([#("visibility", "hidden")])
-    False -> style([#("visibility", "visible")])
+    True -> attribute("hidden", "hidden")
+    False -> attr.none()
   }
+}
+
+fn on_db_click(msg: msg) -> Attribute(msg) {
+  use _ <- on("dblclick")
+  Ok(msg)
+}
+
+@external(javascript, "./app.ffi.mjs", "focusElement")
+fn do_focus_element(_key: String) -> Result(String, Nil) {
+  Error(Nil)
+}
+
+fn focus_element(id: String) -> Effect(Msg) {
+  effect.from(fn(_dispatch) {
+    let _ = do_focus_element(id)
+    Nil
+  })
 }
