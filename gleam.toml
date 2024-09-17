@@ -16,6 +16,7 @@ version = "1.0.0"
 [dependencies]
 gleam_stdlib = ">= 0.34.0 and < 2.0.0"
 lustre = ">= 4.2.4 and < 5.0.0"
+tardis = ">= 0.1.0 and < 1.0.0"
 
 [dev-dependencies]
 gleeunit = ">= 1.0.0 and < 2.0.0"

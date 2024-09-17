@@ -12,12 +12,15 @@ import lustre/element/html.{
   ul,
 }
 import lustre/event.{on_blur, on_click, on_input, on_keydown}
+import tardis
 
 pub fn main() {
-  let app = lustre.application(init, update, view)
-  let assert Ok(_) = lustre.start(app, "#app", Nil)
+  let assert Ok(main) = tardis.single("main")
 
-  Nil
+  lustre.application(init, update, view)
+  |> tardis.wrap(with: main)
+  |> lustre.start("#app", Nil)
+  |> tardis.activate(with: main)
 }
 
 // MODEL
@@ -42,7 +45,7 @@ fn init(_flags) {
 
 // UPDATE
 
-type Msg {
+pub type Msg {
   NoOp
   UpdateField(String)
   EditingEntry(Int, Bool)

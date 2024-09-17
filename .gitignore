@@ -3,3 +3,4 @@
 /build
 erl_crash.dump
 gleamtest.mjs
+.DS_Store
